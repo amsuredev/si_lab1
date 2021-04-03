@@ -1,4 +1,6 @@
 from enum import Enum
+
+
 class Segment:
     def __init__(self, direction, step, end_point=None, points=[]):
         self.__direction = direction
