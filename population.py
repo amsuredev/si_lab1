@@ -1,5 +1,6 @@
 from individual import Individual
-from _path import Path, Point
+from _path import Path
+from point import Point
 
 class Population:
 

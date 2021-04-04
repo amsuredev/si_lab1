@@ -1,19 +1,18 @@
 from point import Point
 from segment import Segment, Direction
 from copy import deepcopy
+from random import random
 
 
 class Path:
     def __init__(self, start_point: Point, finish_point: Point, segments=None, connecting_points=None, max_x=0,
                  max_y=0):
-        if segments is None:
-            segments = []
-        if connecting_points is None:
-            connecting_points = []
         self.__start_point = start_point
         self.__finish_point = finish_point
-        self.__segments = segments
-        self.__connecting_points = connecting_points
+        if segments is None:
+            self.__segments = []
+        if connecting_points is None:
+            self.__connecting_points = []
         self.__max_x = max_x
         self.__max_y = max_y
 
@@ -30,8 +29,8 @@ class Path:
         return self.__finish_point
 
     @finish_point.setter
-    def finish_point(self):
-        return self.__finish_point
+    def finish_point(self, finish_point):
+        self.__finish_point = finish_point
 
     @property
     def segments(self):
@@ -51,7 +50,7 @@ class Path:
 
     @property
     def max_x(self):
-        return self.max_x
+        return self.__max_x
 
     @max_x.setter
     def max_x(self, max_x):
@@ -59,7 +58,7 @@ class Path:
 
     @property
     def max_y(self):
-        return self.max_y
+        return self.__max_y
 
     @max_y.setter
     def max_y(self, max_y):
@@ -172,10 +171,345 @@ class Path:
         else:
             return self.__connecting_points[-1]
 
-
     def print(self):
         print("start point: x={0}, y = {1}".format(self.__start_point.x, self.__start_point.y))
         print("end point: x={0}, y = {1}".format(self.__finish_point.x, self.__finish_point.y))
         for segment in self.__segments:
             print(segment)
+
+    def mutation(self, prob_mutate=0.4):
+        for segment in self.__segments:
+            do_mutation = random() < prob_mutate
+            if do_mutation:
+                if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                    mistake = "BEFORE MOVE"
+                index = self.__get_index_of_segment(segment)
+                path_before_mut = deepcopy(self)
+                orient_cur_seg = Direction.direction_orientation(segment.direction)
+                if orient_cur_seg == "vertical":#horizontal mutation
+                    mutation_direction = Direction.get_random_hor_direction()
+                    self.__move_hor_segment(mutation_direction, segment)
+                    if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                        mistake = "after hor move"
+                else:#vertical mutation
+                    mutation_direction = Direction.get_random_vert_direction()
+                    self.__move_vert_segment(mutation_direction, segment)
+                    if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                        mistake = "after vert move"
+                path_after_mut = deepcopy(self)
+                self.__repair()
+                if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                    mistake = "after repair"
+                # if self.__capture_end_point():
+                #     self.cut_path()
+                #     return
+
+    def __get_index_of_segment(self, segment):
+        for index in range(len(self.__segments)):
+            if self.__segments[index] is segment:
+                return index
+        raise Exception("Segment not in path")
+
+    def __move_hor_segment(self, mutation_direction, segment):
+        cur_seg_index = self.__get_index_of_segment(segment)
+        if cur_seg_index != 0 and cur_seg_index != len(self.__segments) - 1:#segment not last not first
+            self.__hor_move_not_last_not_first(cur_seg_index, mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "not last not first"
+        elif cur_seg_index == 0 and cur_seg_index != len(self.__segments) - 1:#segment first not last
+            self.__hor_move_first_not_last(mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "first not last"
+        elif cur_seg_index == 0 and cur_seg_index == len(self.__segments) - 1:#segment first and last
+            self.__hor_move_first_and_last(mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "first and last"
+        else: #not first and last
+            self.__hor_move_last_not_first(mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "not first but last"
+
+    def __move_vert_segment(self, mutation_direction, segment):
+        cur_seg_index = self.__get_index_of_segment(segment)
+        if cur_seg_index != 0 and cur_seg_index != len(self.__segments) - 1:#segment not last not first
+            self.__vert_move_not_last_not_first(cur_seg_index, mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "segment not last not first"
+        elif cur_seg_index == 0 and cur_seg_index != len(self.__segments) - 1:#segment first not last
+            self.__vert_move_first_not_last(mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "segment first not last"
+        elif cur_seg_index == 0 and cur_seg_index == len(self.__segments) - 1:#segment first and last
+            self.__vert_move_first_and_last(mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "segment first and last"
+        else: #not first but last
+            self.__vert_move_last_not_first(mutation_direction)
+            if self.debug_exist_change_two_coordinates_end_point_of_segment():
+                mistake = "segment last not first"
+
+    def __move_on_x_segment(self, cur_seg_index, offset_x_move_all_points):
+        for index in range(len(self.__segments[cur_seg_index].points)):
+            point_before_mutation = self.__segments[cur_seg_index].points[index]
+            self.__segments[cur_seg_index].points[index] = Point(point_before_mutation.x + offset_x_move_all_points, point_before_mutation.y)#create new objects, makes more safety
+        self.__segments[cur_seg_index].end_point = deepcopy(self.__segments[cur_seg_index].points[-1])
+
+    def __move_on_y_segment(self, cur_seg_index, offset_y_move_all_points):
+        for index in range(len(self.__segments[cur_seg_index].points)):
+            point_before_mutation = self.__segments[cur_seg_index].points[index]
+            self.__segments[cur_seg_index].points[index] = Point(point_before_mutation.x,
+                                                                 point_before_mutation.y + offset_y_move_all_points)  # create new objects, makes more safety
+        self.__segments[cur_seg_index].end_point = deepcopy(self.__segments[cur_seg_index].points[-1])
+
+    def __hor_move_not_last_not_first(self, cur_seg_index, mutation_direction):
+        offset_x_move_all_points = 1 if mutation_direction == Direction.RIGHT else -1
+        self.__move_on_x_segment(cur_seg_index, offset_x_move_all_points)
+        before_segment = self.__segments[cur_seg_index - 1]
+        self.__move_before_segment_hor(mutation_direction, before_segment, offset_x_move_all_points)
+        after_segment = self.__segments[cur_seg_index + 1]
+        self.__move_after_segment_hor(mutation_direction, after_segment)
+
+
+    def __vert_move_not_last_not_first(self, cur_seg_index, mutation_direction):
+        offset_y_move_all_points = 1 if mutation_direction == Direction.UP else -1
+        self.__move_on_y_segment(cur_seg_index, offset_y_move_all_points)
+        before_segment = self.__segments[cur_seg_index - 1]
+        self.__move_before_segment_vert(mutation_direction, before_segment, offset_y_move_all_points)
+        after_segment = self.__segments[cur_seg_index + 1]
+        self.__move_after_segment_vert(mutation_direction, after_segment)
+
+    def __move_before_segment_hor(self, mutation_direction, before_segment, offset_x_move_all_points):
+        if mutation_direction == before_segment.direction:
+            new_last_point = Point(before_segment.end_point.x + offset_x_move_all_points, before_segment.end_point.y)
+            before_segment.points.append(new_last_point)
+            before_segment.end_point = Point(new_last_point.x, new_last_point.y)
+            before_segment.step += 1
+        else:
+            before_segment.points = before_segment.points[:-1]
+            before_segment.step -= 1
+            if len(before_segment.points) != 0:
+                before_segment.end_point = deepcopy(before_segment.points[-1])
+            else:
+                before_segment.end_point = None
+
+    def __move_before_segment_vert(self, mutation_direction, before_segment, offset_y_move_all_points):
+        if mutation_direction == before_segment.direction:
+            new_last_point = Point(before_segment.end_point.x, before_segment.end_point.y + offset_y_move_all_points)
+            before_segment.points.append(new_last_point)
+            before_segment.end_point = Point(new_last_point.x, new_last_point.y)
+            before_segment.step += 1
+        else:
+            before_segment.points = before_segment.points[:-1]
+            before_segment.step -= 1
+            if len(before_segment.points) != 0:
+                before_segment.end_point = deepcopy(before_segment.points[-1])
+            else:
+                before_segment.end_point = None
+
+    def __move_after_segment_hor(self, mutation_direction, after_segment):
+        if mutation_direction == after_segment.direction:  # after segment direction equals move -> cut
+            after_segment.points.pop(0)
+            after_segment.step -= 1
+            if len(after_segment.points) == 0:
+                after_segment.end_point = None
+        else:  # after segment direction not equals move -> append element to the beginning
+            x_offset = -1 if after_segment.direction == Direction.RIGHT else 1  # correct
+            point_insert = Point(after_segment.points[0].x + x_offset, after_segment.points[0].y)
+            after_segment.points.insert(0, point_insert)
+            after_segment.step += 1
+
+    def __move_after_segment_vert(self, mutation_direction, after_segment):
+        if mutation_direction == after_segment.direction:  # after segment direction equals move -> cut
+            after_segment.points.pop(0)
+            after_segment.step -= 1
+            if len(after_segment.points) == 0:
+                after_segment.end_point = None
+        else:  # after segment direction not equals move -> append element to the beginning
+            y_offset = -1 if after_segment.direction == Direction.UP else 1
+            point_insert = Point(after_segment.points[0].x, after_segment.points[0].y + y_offset)
+            after_segment.points.insert(0, point_insert)
+            after_segment.step += 1
+
+    def __hor_move_first_not_last(self, mutation_direction):
+        offset_x_move_all_points = 1 if mutation_direction == Direction.RIGHT else -1
+        self.__move_on_x_segment(cur_seg_index=0, offset_x_move_all_points=offset_x_move_all_points)
+        after_segment = self.__segments[1]
+        self.__move_after_segment_hor(mutation_direction, after_segment=after_segment)
+        new_first_segment = self.__hor_create_new_first_segment(mutation_direction, offset_x_move_all_points)
+        self.__segments.insert(0, new_first_segment)
+
+    def __vert_move_first_not_last(self, mutation_direction):
+        offset_y_move_all_points = 1 if mutation_direction == Direction.UP else -1
+        self.__move_on_y_segment(cur_seg_index=0, offset_y_move_all_points=offset_y_move_all_points)
+        after_segment = self.__segments[1]
+        self.__move_after_segment_vert(mutation_direction=mutation_direction, after_segment=after_segment)
+        new_first_segment = self.__vert_create_new_first_segment(mutation_direction, offset_y_move_all_points)
+        self.__segments.insert(0, new_first_segment)
+
+    def __hor_create_new_first_segment(self, mutation_direction, offset_x_move_all_points):
+        point_first_segment = Point(self.__start_point.x + offset_x_move_all_points, self.__start_point.y)
+        new_first_segment = Segment(direction=mutation_direction, step=1, end_point=Point(point_first_segment.x, point_first_segment.y))
+        new_first_segment.points.append(Point(point_first_segment.x, point_first_segment.y))
+        return new_first_segment
+
+    def __vert_create_new_first_segment(self, mutation_direction, offset_y_move_all_points):
+        point_first_segment = Point(self.__start_point.x, self.__start_point.y + offset_y_move_all_points)
+        new_first_segment = Segment(direction=mutation_direction, step=1, end_point=Point(point_first_segment.x, point_first_segment.y))
+        new_first_segment.points.append(Point(point_first_segment.x, point_first_segment.y))
+        return new_first_segment
+
+    def __hor_move_first_and_last(self, mutation_direction):
+        offset_x_move_all_points = 1 if mutation_direction == Direction.RIGHT else -1
+        self.__move_on_x_segment(cur_seg_index=0, offset_x_move_all_points=offset_x_move_all_points)
+        new_first_segment = self.__hor_create_new_first_segment(mutation_direction, offset_x_move_all_points)
+        self.__segments.insert(0, new_first_segment)
+        new_last_segment = self.__hor_create_new_last_segment(mutation_direction)
+        self.__segments.append(new_last_segment)
+
+    def __vert_move_first_and_last(self, mutation_direction):
+        offset_y_move_all_points = 1 if mutation_direction == Direction.UP else -1
+        self.__move_on_y_segment(cur_seg_index=0, offset_y_move_all_points=offset_y_move_all_points)
+        new_first_segment = self.__vert_create_new_first_segment(mutation_direction, offset_y_move_all_points)
+        self.__segments.insert(0, new_first_segment)
+        new_last_segment = self.__vert_create_new_last_segment(mutation_direction)
+        self.__segments.append(new_last_segment)
+
+
+
+    def __hor_create_new_last_segment(self, mutation_direction):
+        point_last_segment = Point(self.__finish_point.x, self.__finish_point.y)
+        new_last_segment = Segment(direction=Direction.opposite_direction(mutation_direction), step=1, end_point=Point(point_last_segment.x, point_last_segment.y))
+        new_last_segment.points.append(Point(point_last_segment.x, point_last_segment.y))
+        return new_last_segment
+
+    def __hor_move_last_not_first(self, mutation_direction):
+        offset_x_move_all_points = 1 if mutation_direction == Direction.RIGHT else -1
+        self.__move_on_x_segment(cur_seg_index=-1, offset_x_move_all_points=offset_x_move_all_points)
+        before_segment = self.__segments[-2]
+        self.__move_before_segment_hor(mutation_direction, before_segment, offset_x_move_all_points)
+        new_after_segment = self.__hor_create_new_last_segment(mutation_direction)
+        self.__segments.append(new_after_segment)
+
+    def __vert_move_last_not_first(self, mutation_direction):
+        offset_y_move_all_points = 1 if mutation_direction == Direction.UP else -1
+        self.__move_on_y_segment(cur_seg_index=-1, offset_y_move_all_points=offset_y_move_all_points)
+        before_segment = self.__segments[-2]
+        self.__move_before_segment_vert(mutation_direction, before_segment, offset_y_move_all_points)
+        new_last_segment = self.__vert_create_new_last_segment(mutation_direction)
+        self.__segments.append(new_last_segment)
+
+    def __vert_create_new_last_segment(self, mutation_direction):
+        point_last_segment = Point(self.__finish_point.x, self.__finish_point.y)
+        new_last_segment = Segment(direction=Direction.opposite_direction(mutation_direction), step=1,
+                                   end_point=Point(point_last_segment.x, point_last_segment.y))
+        new_last_segment.points.append(Point(point_last_segment.x, point_last_segment.y))
+        return new_last_segment
+
+    def __exist_segments_with_step_zero(self):
+        for segment in self.__segments:
+            if segment.step == 0:
+                return True
+        return False
+
+    def __one_segment_orientation_consistently(self):
+        last_orientation = None
+        for segment in self.__segments:
+            if last_orientation is None:
+                last_orientation = Direction.direction_orientation(segment.direction)
+                continue
+            else:
+                if last_orientation == Direction.direction_orientation(segment.direction):
+                    return True
+                else:
+                    last_orientation = Direction.direction_orientation(segment.direction)
+        return False
+
+    def __repair(self):
+        while self.__exist_segments_with_step_zero() or self.__one_segment_orientation_consistently():
+            for segment in self.__segments:
+                if segment.step == 0:
+                    self.__segments.remove(segment)
+            last_orientation = None
+            for segment in self.__segments:
+                current_orientation = Direction.direction_orientation(segment.direction)
+                if last_orientation is None:
+                    last_orientation = current_orientation
+                    continue
+                if current_orientation == last_orientation:
+                    before_segment = self.__segments[self.__get_index_of_segment(segment) - 1]
+                    if segment.direction == before_segment.direction:
+                        before_segment.step += segment.step
+                        before_segment.points += deepcopy(segment.points)
+                        before_segment.end_point = deepcopy(before_segment.points[-1])#new
+                        self.__segments.pop(self.__get_index_of_segment(segment))
+                        self.__repair()
+                        return
+                    else:#different directions
+                        if before_segment.step > segment.step:
+                            points_num_to_remove = segment.step
+                            before_segment.step -= points_num_to_remove
+                            before_segment.points = before_segment.points[
+                                                    :len(before_segment.points) - points_num_to_remove]
+                            before_segment.end_point = deepcopy(before_segment.points[-1])
+                            self.__segments.pop(self.__get_index_of_segment(segment))
+                            self.__repair()
+                            return
+                            #continue
+                        elif before_segment.step < segment.step:
+                            points_num_to_remove = before_segment.step
+                            segment.step -= points_num_to_remove
+                            segment.points = segment.points[points_num_to_remove:]
+                            self.__segments.pop(self.__get_index_of_segment(before_segment))
+                            segment.end_point = deepcopy(segment.points[-1])
+                            self.__repair()
+                            return
+                        else:#segments equal
+                            index_of_segment_with_last_orientation = self.__get_index_of_segment(segment) - 2
+                            self.__segments.pop(self.__get_index_of_segment(segment))
+                            self.__segments.pop(self.__get_index_of_segment(before_segment))
+                            self.__repair()
+                            return
+                            #continue
+                last_orientation = current_orientation
+
+    def debug_exist_change_two_coordinates_end_point_of_segment(self):
+        if len(self.__segments) <= 1:
+            return False
+        count = 0
+        last_x = None
+        last_y = None
+        for segment in self.__segments:
+            if segment.end_point is None:
+                continue
+            if count == 0:
+                last_x = segment.end_point.x
+                last_y = segment.end_point.y
+                count += 1
+                continue
+            if last_x != segment.end_point.x and last_y != segment.end_point.y:
+                return True
+            last_x = segment.end_point.x
+            last_y = segment.end_point.y
+            count += 1
+        return False
+
+if __name__ == "__main__":
+    mp = Path(start_point=Point(1, 3), finish_point=Point(1,5))
+    a = 5
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

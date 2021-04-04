@@ -6,11 +6,10 @@ from point import Point
 class Segment:
     def __init__(self, direction, step, end_point=None, points=None):
         if points is None:
-            points = []
+            self.__points = []
         self.__direction = direction
         self.__step = step
         self.__end_point = end_point
-        self.__points = points
 
     @property
     def direction(self):
@@ -96,6 +95,19 @@ class Direction(Enum):
     def direction_orientation(cls, direction):
         return {Direction.UP: "vertical", Direction.DOWN: "vertical", Direction.LEFT: "horisontal",
                 Direction.RIGHT: "horisontal"}[direction]
+
+    @classmethod
+    def get_random_hor_direction(cls):
+        return [Direction.LEFT, Direction.RIGHT][randint(0, 1)]
+
+    @classmethod
+    def get_random_vert_direction(cls):
+        return [Direction.UP, Direction.DOWN][randint(0, 1)]
+
+    @classmethod
+    def opposite_direction(cls, direction):
+        return {Direction.UP: Direction.DOWN, Direction.DOWN: Direction.UP, Direction.LEFT: Direction.RIGHT,
+                Direction.RIGHT: Direction.LEFT}[direction]
 
 def tests():
     Segment.generate_segment(Point(1, 4), Direction.UP, max_step=6)
