@@ -181,25 +181,14 @@ class Path:
         for segment in self.__segments:
             do_mutation = random() < prob_mutate
             if do_mutation:
-                if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                    mistake = "BEFORE MOVE"
-                index = self.__get_index_of_segment(segment)
-                path_before_mut = deepcopy(self)
                 orient_cur_seg = Direction.direction_orientation(segment.direction)
                 if orient_cur_seg == "vertical":#horizontal mutation
                     mutation_direction = Direction.get_random_hor_direction()
                     self.__move_hor_segment(mutation_direction, segment)
-                    if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                        mistake = "after hor move"
                 else:#vertical mutation
                     mutation_direction = Direction.get_random_vert_direction()
                     self.__move_vert_segment(mutation_direction, segment)
-                    if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                        mistake = "after vert move"
-                path_after_mut = deepcopy(self)
                 self.__repair()
-                if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                    mistake = "after repair"
                 # if self.__capture_end_point():
                 #     self.cut_path()
                 #     return
@@ -214,39 +203,23 @@ class Path:
         cur_seg_index = self.__get_index_of_segment(segment)
         if cur_seg_index != 0 and cur_seg_index != len(self.__segments) - 1:#segment not last not first
             self.__hor_move_not_last_not_first(cur_seg_index, mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "not last not first"
         elif cur_seg_index == 0 and cur_seg_index != len(self.__segments) - 1:#segment first not last
             self.__hor_move_first_not_last(mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "first not last"
         elif cur_seg_index == 0 and cur_seg_index == len(self.__segments) - 1:#segment first and last
             self.__hor_move_first_and_last(mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "first and last"
         else: #not first and last
             self.__hor_move_last_not_first(mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "not first but last"
 
     def __move_vert_segment(self, mutation_direction, segment):
         cur_seg_index = self.__get_index_of_segment(segment)
         if cur_seg_index != 0 and cur_seg_index != len(self.__segments) - 1:#segment not last not first
             self.__vert_move_not_last_not_first(cur_seg_index, mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "segment not last not first"
         elif cur_seg_index == 0 and cur_seg_index != len(self.__segments) - 1:#segment first not last
             self.__vert_move_first_not_last(mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "segment first not last"
         elif cur_seg_index == 0 and cur_seg_index == len(self.__segments) - 1:#segment first and last
             self.__vert_move_first_and_last(mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "segment first and last"
         else: #not first but last
             self.__vert_move_last_not_first(mutation_direction)
-            if self.debug_exist_change_two_coordinates_end_point_of_segment():
-                mistake = "segment last not first"
 
     def __move_on_x_segment(self, cur_seg_index, offset_x_move_all_points):
         for index in range(len(self.__segments[cur_seg_index].points)):
@@ -464,7 +437,6 @@ class Path:
                             self.__repair()
                             return
                         else:#segments equal
-                            index_of_segment_with_last_orientation = self.__get_index_of_segment(segment) - 2
                             self.__segments.pop(self.__get_index_of_segment(segment))
                             self.__segments.pop(self.__get_index_of_segment(before_segment))
                             self.__repair()
@@ -492,10 +464,6 @@ class Path:
             last_y = segment.end_point.y
             count += 1
         return False
-
-if __name__ == "__main__":
-    mp = Path(start_point=Point(1, 3), finish_point=Point(1,5))
-    a = 5
 
 
 
