@@ -73,7 +73,6 @@ class Path:
     def __delete_unnecessary_points(self):
         if self.__connecting_points[-1] != self.__finish_point:
             direction_finish_segment = self.__segments[-1].direction
-            segment_increase_points = 0
             if Direction.direction_orientation(direction=direction_finish_segment) == "vertical":
                 segment_increase_points = abs(self.get_last_point().y - self.__finish_point.y)
             else:
@@ -81,7 +80,7 @@ class Path:
             self.__segments[-1].step -= segment_increase_points
             self.__connecting_points = self.__connecting_points[:len(self.__connecting_points) - segment_increase_points]
             self.__segments[-1].points = self.__segments[-1].points[:len(self.__segments[-1].points) - segment_increase_points]
-            self.__segments[-1].end_point = self.__connecting_points[-1]
+            self.__segments[-1].end_point = deepcopy(self.__connecting_points[-1])
         # usunac z pointow finish_point, aby ulatwic obliczenie funkcji oceny
         self.__connecting_points = self.__connecting_points[:len(self.__connecting_points) - 1]
 
@@ -172,6 +171,7 @@ class Path:
             return self.__start_point
         else:
             return self.__connecting_points[-1]
+
 
     def print(self):
         print("start point: x={0}, y = {1}".format(self.__start_point.x, self.__start_point.y))
