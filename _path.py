@@ -202,6 +202,18 @@ class Path:
                     return
                 self.__renew_connection_points()
 
+    def exist_segment_with_empty_points(self):
+        for segment in self.__segments:
+            if len(segment.points) == 0:
+                return True
+        return False
+
+    def has_end_point_none(self):
+        for segment in self.__segments:
+            if segment.end_point is None:
+                return True
+        return False
+
     def __renew_connection_points(self):
         self.__connecting_points = []
         for segment in self.__segments:
@@ -448,8 +460,10 @@ class Path:
                         elif before_segment.step < segment.step:
                             points_num_to_remove = before_segment.step
                             segment.step -= points_num_to_remove
-                            segment.points = segment.points[points_num_to_remove:]
+                            segment.points = segment.points[-segment.step:]#leave only last n elements
                             self.__segments.pop(self.__get_index_of_segment(before_segment))
+                            #debug
+                            print(segment.points[-1])
                             segment.end_point = deepcopy(segment.points[-1])
                             self.__repair()
                             return
@@ -495,12 +509,13 @@ class Path:
                 index_finish_point = self.__segments[index].points.index(self.__finish_point)
                 self.__segments[index].points = self.__segments[index].points[:index_finish_point + 1]
                 self.__segments[index].end_point = deepcopy(self.__segments[index].points[-1])
+                self.__segments[index].step = len(self.__segments[index].points)
                 return
 
     def get_points_out_size(self):
         count = 0
         for point in self.__connecting_points:
-            if point.x > self.__max_x or point.y > self.__max_y:
+            if 0 < point.x > self.__max_x or 0 < point.y > self.__max_y:
                 count += 1
         return count
 

@@ -21,8 +21,8 @@ class Individual:
         for path in self.__path_list:
             path.print()
 
-    def assessment(self, weight_out_side=4, weight_cross_by_self=3.5, weight_cross_between=2.1, weight_length_path=0.3,
-                   weight_num_segments=0.1):
+    def assessment(self, weight_out_side=4, weight_cross_by_self=2.1, weight_cross_between=3.5, weight_length_path=0.003,
+                   weight_num_segments=0.001):
         assessm_weight_out_side = self.get_points_out_size() * weight_out_side
         assessm_weight_cross_by_self = self.get_cross_by_self() * weight_cross_by_self
         assessm_weight_cross_between = self.get_cross_between() * weight_cross_between
@@ -71,3 +71,13 @@ class Individual:
         for path in self.__path_list:
             num_segments += path.get_num_segments()
         return num_segments
+
+    def match_individual(self):
+        point_out_size = self.get_points_out_size()
+        points_cross_by_self = self.get_cross_by_self()
+        points_cross_beetween = self.get_cross_between()
+        final_grade = point_out_size + points_cross_by_self + points_cross_beetween
+        if final_grade == 0:
+            return True
+        else:
+            return False
