@@ -163,7 +163,7 @@ class Path:
             if result == 0:
                 return (Direction.RIGHT, 50)
             to_return = (Direction.LEFT, cor_direct_probab_pr) if result < 0 else (
-            Direction.RIGHT, cor_direct_probab_pr)
+                Direction.RIGHT, cor_direct_probab_pr)
             return to_return
         else:
             result = self.__finish_point.y - last_point.y
@@ -496,3 +496,20 @@ class Path:
                 self.__segments[index].points = self.__segments[index].points[:index_finish_point + 1]
                 self.__segments[index].end_point = deepcopy(self.__segments[index].points[-1])
                 return
+
+    def get_points_out_size(self):
+        count = 0
+        for point in self.__connecting_points:
+            if point.x > self.__max_x or point.y > self.__max_y:
+                count += 1
+        return count
+
+    def get_cross_by_self(self):
+        points_without_similar = list(set(self.__connecting_points + [self.__finish_point] + [self.__start_point]))#delete repetitions
+        return len(self.__connecting_points) + 2 - len(points_without_similar)
+
+    def get_path_length(self):
+        return len(self.__connecting_points) + 2
+
+    def get_num_segments(self):
+        return len(self.__segments)

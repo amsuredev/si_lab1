@@ -11,4 +11,6 @@ if __name__ == '__main__':
     print("----------------------------------\nAFTER MUTATION")
     for individual in population.individuals:
         individual.print()
+        print("OCENA: {ocena}".format(ocena=individual.assessment()))
+
 
