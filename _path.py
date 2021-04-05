@@ -184,7 +184,7 @@ class Path:
         for segment in self.__segments:
             print(segment)
 
-    def mutation(self, prob_mutate=0.4):
+    def mutation(self, prob_mutate=0.1):
         for segment in self.__segments:
             do_mutation = random() < prob_mutate
             if do_mutation:
@@ -515,7 +515,7 @@ class Path:
     def get_points_out_size(self):
         count = 0
         for point in self.__connecting_points:
-            if 0 < point.x > self.__max_x or 0 < point.y > self.__max_y:
+            if point.x < 0 or point.x > self.__max_x or point.y < 0 or point.y > self.__max_y:
                 count += 1
         return count
 

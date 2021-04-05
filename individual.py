@@ -20,8 +20,8 @@ class Individual:
         print("------Individual-------")
         for path in self.__path_list:
             path.print()
-
-    def assessment(self, weight_out_side=4, weight_cross_by_self=2.1, weight_cross_between=3.5, weight_length_path=0.003,
+    #7 za swoi, 5 z drugimi, 4 za plytu, 2 ili 1 za dlugosc sciezki
+    def assessment(self, weight_out_side=4, weight_cross_by_self=2.1, weight_cross_between=10, weight_length_path=0.003,
                    weight_num_segments=0.001):
         assessm_weight_out_side = self.get_points_out_size() * weight_out_side
         assessm_weight_cross_by_self = self.get_cross_by_self() * weight_cross_by_self
@@ -81,3 +81,10 @@ class Individual:
             return True
         else:
             return False
+
+    def has_minus_in_end_point(self):
+        for path in self.__path_list:
+            for segment in path.segments:
+                if segment.end_point.x < 0 or segment.end_point.y < 0:
+                    return True
+        return False

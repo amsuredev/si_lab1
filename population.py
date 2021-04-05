@@ -108,7 +108,7 @@ class Population:
                 break
         return selected_individual
 
-    def cross(self, individual_basis: Individual, individual_donor: Individual, prob_cross=0.7, prob_change_path=0.4):
+    def cross(self, individual_basis: Individual, individual_donor: Individual, prob_cross=0.97, prob_change_path=0.4):
         prob_cross_random = random()
         if prob_cross_random > prob_cross:
             return None
@@ -127,36 +127,36 @@ class Population:
                 return individual
         return None
 
-    def start_searching_for_match_individual(self):
-        assessment_best_individuals = []
-        match_individual = self.exists_individual_matches()
-        counter_search = 0
-        count_przepis = len(self.__individuals) // 10
-        count_parents = len(self.__individuals) // 3
-        while match_individual is None:
-            assessment_best_individuals.append(self.tournament_selection(len(self.__individuals)).assessment())
-            counter_search += 1
-            new_population = []
-            for counter in range(count_przepis):
-                new_population.append(self.roulette_selection())
-            parents = []
-            for counter in range(count_parents):
-                parents.append(self.roulette_selection())
-            children = []
-            while len(children) != len(self.__individuals) - count_przepis:
-                child = self.cross(parents[randint(0, len(parents) - 1)], parents[randint(0, len(parents) - 1)])
-                if child is not None:
-                    children.append(child)
-            new_population += children
-            for individual in new_population:
-                for path in individual.path_list:
-                    path.mutation()
-            self.__individuals = new_population
-            match_individual = self.exists_individual_matches()
-        print(counter_search)
-        print("success")
-        print("found individual")
-        match_individual.print()
+    # def start_searching_for_match_individual(self):
+    #     assessment_best_individuals = []
+    #     match_individual = self.exists_individual_matches()
+    #     counter_search = 0
+    #     count_przepis = len(self.__individuals) // 10
+    #     count_parents = len(self.__individuals) // 3
+    #     while match_individual is None:
+    #         assessment_best_individuals.append(self.tournament_selection(len(self.__individuals)).assessment())
+    #         counter_search += 1
+    #         new_population = []
+    #         for counter in range(count_przepis):
+    #             new_population.append(self.roulette_selection())
+    #         parents = []
+    #         for counter in range(count_parents):
+    #             parents.append(self.roulette_selection())
+    #         children = []
+    #         while len(children) != len(self.__individuals) - count_przepis:
+    #             child = self.cross(parents[randint(0, len(parents) - 1)], parents[randint(0, len(parents) - 1)])
+    #             if child is not None:
+    #                 children.append(child)
+    #         new_population += children
+    #         for individual in new_population:
+    #             for path in individual.path_list:
+    #                 path.mutation()
+    #         self.__individuals = new_population
+    #         match_individual = self.exists_individual_matches()
+    #     print(counter_search)
+    #     print("success")
+    #     print("found individual")
+    #     match_individual.print()
 
     def start_search_new(self):
         match_individual = self.exists_individual_matches()
@@ -165,27 +165,73 @@ class Population:
         while match_individual is None:
             iterations += 1
             new_population = []
-
-            best_individual = self.tournament_selection(len(self.__individuals))
-            new_population.append(best_individual)
-            assessment_best_individuals.append(best_individual.assessment())
             parents_count = len(self.__individuals) // 3
             parents = []
             while len(parents) != parents_count:
-                new_parent = self.tournament_selection(len(self.__individuals) // 3)
+                #new_parent = self.tournament_selection(len(self.__individuals) // 3)
+                new_parent = self.roulette_selection()
                 if new_parent not in parents:
                     parents.append(new_parent)
-            while len(new_population) != len(self.__individuals):
+            while len(new_population) != len(self.__individuals) - 1:
                 child = self.cross(parents[randint(0, len(parents) - 1)], parents[randint(0, len(parents) - 1)])
                 if child is not None:
                     new_population.append(child)
             for individual in new_population:
                 for path in individual.path_list:
                     path.mutation()
+            last_best_individual = self.tournament_selection(len(self.__individuals))
+            last_bes_individual_copy = deepcopy(last_best_individual)
+            for path in last_best_individual.path_list:
+                path.mutation()
+
+            if last_best_individual.assessment() < last_bes_individual_copy.assessment():
+                best_result = last_best_individual
+            else:
+                best_result = last_bes_individual_copy
+            new_population.append(best_result)
             self.__individuals = new_population
+            new_best_individual = self.tournament_selection(len(self.__individuals))
+            assessment_best_individuals.append(new_best_individual.assessment())
             match_individual = self.exists_individual_matches()
         print(iterations)
         match_individual.print()
+
+    def search_rollet(self, pr_mutation=0.1):
+        match_individual = self.exists_individual_matches()
+        num_of_generation = 0
+        assessment_best_individuals = []
+        while match_individual is None:
+            num_of_generation += 1
+            new_population = []
+            while len(new_population) != len(self.__individuals) - 1:
+                mom = self.roulette_selection()
+                dad = self.roulette_selection()
+                child = self.cross(dad, mom)
+                if child is not None:
+                    for path in child.path_list:
+                        path.mutation(pr_mutation)
+                    new_population.append(child)
+            last_best_individual = self.tournament_selection(len(self.__individuals))
+            last_bes_individual_copy = deepcopy(last_best_individual)
+            for path in last_best_individual.path_list:
+                path.mutation()
+            if last_best_individual.assessment() < last_bes_individual_copy.assessment():
+                best_result = last_best_individual
+            else:
+                best_result = last_bes_individual_copy
+            new_population.append(best_result)
+            self.__individuals = new_population
+            new_best_individual = self.tournament_selection(len(self.__individuals))
+            assessment_best_individuals.append(new_best_individual.assessment())
+            match_individual = self.exists_individual_matches()
+        if match_individual.has_minus_in_end_point():
+            a = "debug"
+        match_individual.print()
+        match_debug = self.exists_individual_matches()
+        print("found")
+        print(num_of_generation)
+        match_individual.print()
+
 
 
 
