@@ -73,7 +73,7 @@ class Population:
     def fill_population(self, probability=70):
         for individual in self.__individuals:
             individual.generate_connectings_to_all_paths(probability)
-            individual.print()
+            #individual.print()
 
     def tournament_selection(self, n):
         indexes_of_individuals = []
@@ -196,17 +196,17 @@ class Population:
         print(iterations)
         match_individual.print()
 
-    def search_rollet(self, pr_mutation=0.1):
+    def search_rollet(self, generation_num_stop=20, pr_mutation=0.1, turn_size=0.2, prob_cross=0.97, prob_change_path=0.4):
         match_individual = self.exists_individual_matches()
         num_of_generation = 0
         assessment_best_individuals = []
-        while match_individual is None:
+        while match_individual is None and num_of_generation != generation_num_stop:
             num_of_generation += 1
             new_population = []
             while len(new_population) != len(self.__individuals) - 1:
-                mom = self.roulette_selection()
-                dad = self.roulette_selection()
-                child = self.cross(dad, mom)
+                mom = self.tournament_selection(turn_size * len(self.__individuals))
+                dad = self.tournament_selection(turn_size * len(self.__individuals))
+                child = self.cross(dad, mom, prob_cross, prob_change_path)
                 if child is not None:
                     for path in child.path_list:
                         path.mutation(pr_mutation)
@@ -214,7 +214,7 @@ class Population:
             last_best_individual = self.tournament_selection(len(self.__individuals))
             last_bes_individual_copy = deepcopy(last_best_individual)
             for path in last_best_individual.path_list:
-                path.mutation()
+                path.mutation(0.3)
             if last_best_individual.assessment() < last_bes_individual_copy.assessment():
                 best_result = last_best_individual
             else:
@@ -224,13 +224,10 @@ class Population:
             new_best_individual = self.tournament_selection(len(self.__individuals))
             assessment_best_individuals.append(new_best_individual.assessment())
             match_individual = self.exists_individual_matches()
-        if match_individual.has_minus_in_end_point():
-            a = "debug"
-        match_individual.print()
-        match_debug = self.exists_individual_matches()
         print("found")
-        print(num_of_generation)
-        match_individual.print()
+        print("Assessment list: {}".format(assessment_best_individuals))
+        print("Num of generation {}".format(num_of_generation))
+        print("Best individual assessment {}".format(assessment_best_individuals[-1]))
 
 
 

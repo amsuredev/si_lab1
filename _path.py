@@ -462,8 +462,6 @@ class Path:
                             segment.step -= points_num_to_remove
                             segment.points = segment.points[-segment.step:]#leave only last n elements
                             self.__segments.pop(self.__get_index_of_segment(before_segment))
-                            #debug
-                            print(segment.points[-1])
                             segment.end_point = deepcopy(segment.points[-1])
                             self.__repair()
                             return
